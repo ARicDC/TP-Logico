@@ -15,7 +15,7 @@ jugador(Jugador):-
     distinct(Jugador, juega(Jugador,_,_)).
 
 civilizacion(Jugador,Civilizacion):-
-    juega(Jugador,Civilizacion,_).
+    distinct(Civilizacion ,juega(Jugador,Civilizacion,_)).
 
 % no se agrega a la base de conocimientos a elsa como jugadora ya que no juega
 
@@ -39,12 +39,9 @@ civilizacionPopular(Civilizacion):-
     CantidadJugadores > 1.
 
 cantJugadores(Civilizacion, CantidadJugadores):- 
-    civilizacionP(Civilizacion),
+    civilizacion(_,Civilizacion),
     findall(Jugador, distinct(Jugador, juega(Jugador, Civilizacion,_)), Jugadores),
     length(Jugadores, CantidadJugadores).
-
-civilizacionP(Civilizacion):- 
-    distinct(Civilizacion, juega(_,Civilizacion,_)).
 
 % punto 4
 tieneAlcanceGlobal(Tecnologia) :-
@@ -52,23 +49,33 @@ tieneAlcanceGlobal(Tecnologia) :-
     forall(jugador(Persona), juega(Persona,_, Tecnologia)).
 
 % punto 5
+esLider(Civilizacion):-
+    civilizacion(_,Civilizacion),
+    findall(Tecnologia,juega(_,Civilizacion,Tecnologia),Tecnologias),
+    forall(alcanzo(_,Tecnologia), member(Tecnologia,Tecnologias)).
+
+alcanzo(Civilizacion,Tecnologia):-
+    juega(_,Civilizacion,Tecnologia).
+
 
 % punto 6
 % tiene(Jugador,UnaUnidad).
-tiene(ana,jinete(caballo)).
-tiene(ana,piquero(1,conEscudo)).
-tiene(ana,piquero(2,sinEscudo)).
+tiene(ana,jinete(caballo,_)).
+tiene(ana,piquero(1,conEscudo,_)).
+tiene(ana,piquero(2,sinEscudo,_)).
 tiene(beto,campeon(100)).
 tiene(beto,campeon(80)).
-tiene(beto,piquero(1,conEscudo)).
-tiene(beto,jinete(camello)).
-tiene(carola,piquero(3,sinEscudo)).
-tiene(carola,piquero(2,conEscudo)).
+tiene(beto,piquero(1,conEscudo,_)).
+tiene(beto,jinete(camello,_)).
+tiene(carola,piquero(3,sinEscudo,_)).
+tiene(carola,piquero(2,conEscudo,_)).
 % como Dimitri no tiene unidades no es necesario agregar a la base de conocimiento
 
 % punto 7
 
 % punto 8
+
+
 
 % punto 9
 
@@ -137,7 +144,41 @@ test("civilizacion no es popular", fail) :-
 %--------------------------------------------------------------------------------------------------------------
 %--------------------------------------------------------------------------------------------------------------
 
-%%%% FALTA TEST DE INTEGRANTE
+:- begin_tests(tiene_alcance_global).
+
+test("tecnologia con alcance global") :-
+    tieneAlcanceGlobal(herreria).
+
+test("tecnologia no tiene alcance global", set(Tecnologia = [forja,emplumado,lamina,fundicion,punzon,horno,malla,placas,molino,collera,arado]), fail) :-
+    civilizacionPopular(Tecnologia).
+
+:- end_tests(tiene_alcance_global).
+
+%--------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------
+:- begin_tests(civilizacion_alcanzo_una_teconologia).
+
+test("civilizacion alcanzó una tecnologia",nondet) :-
+    alcanzo(romanos, herreria).
+
+test("civilizacion no alcanzo una tecnologia", fail) :-
+    alcanzo(incas, laminas).
+
+:- end_tests(civilizacion_alcanzo_una_teconologia).
+
+:- begin_tests(civilizacion_lider).
+
+test("es civilizacion lider",nondet) :-
+    esLider(romanos).
+
+test("no es civilizacion lider", fail) :-
+    civilizacionPopular(incas).
+
+:- end_tests(civilizacion_lider).
+
+%--------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------
+
 
 :- begin_tests(jugador_puede_desarrollar_una_tecnologia).
 
