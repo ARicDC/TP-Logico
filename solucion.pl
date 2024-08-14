@@ -9,11 +9,10 @@ juega(beto,incas,forja).
 juega(beto,incas,fundicion).
 juega(carola,romanos,herreria).
 juega(dimitri,romanos,herreria).
-juega(dimitri,romanos,herreria).
 juega(dimitri,romanos,fundicion).
 
 jugador(Jugador):-
-    juega(Jugador,_,_).
+    distinct(Jugador, juega(Jugador,_,_)).
 
 civilizacion(Jugador,Civilizacion):-
     juega(Jugador,Civilizacion,_).
@@ -35,8 +34,22 @@ desarrolloHerreriayForja(Jugador):-
     tieneTecnologia(Jugador,forja).
 
 % punto 3
+civilizacionPopular(Civilizacion):- 
+    cantJugadores(Civilizacion, CantidadJugadores),
+    CantidadJugadores > 1.
+
+cantJugadores(Civilizacion, CantidadJugadores):- 
+    civilizacionP(Civilizacion),
+    findall(Jugador, distinct(Jugador, juega(Jugador, Civilizacion,_)), Jugadores),
+    length(Jugadores, CantidadJugadores).
+
+civilizacionP(Civilizacion):- 
+    distinct(Civilizacion, juega(_,Civilizacion,_)).
 
 % punto 4
+tieneAlcanceGlobal(Tecnologia) :-
+    tecnologia(Tecnologia), 
+    forall(jugador(Persona), juega(Persona,_, Tecnologia)).
 
 % punto 5
 
@@ -76,7 +89,7 @@ dependencia(molino,collera).
 dependencia(collera,arado).
 
 tecnologia(Tecnologia):-
-    dependencia(_,Tecnologia).
+    distinct(Tecnologia, dependencia(_,Tecnologia)).
  
 arbolDeTecnologia(PrimeraTecnologia,SegundaTecnologia):-
     tecnologia(PrimeraTecnologia),
@@ -109,6 +122,20 @@ test("personas que no son expertos en metales") :-
     not(expertoEnMetales(carola)),not(expertoEnMetales(dimitri)).
 
 :- end_tests(experto_En_metales).
+%--------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------
+:- begin_tests(civilizacion_popular).
+
+test("civilizacion es popular",nondet) :-
+    civilizacionPopular(romanos).
+
+test("civilizacion no es popular", fail) :-
+    civilizacionPopular(incas).
+
+:- end_tests(civilizacion_popular).
+
+%--------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------
 
 %%%% FALTA TEST DE INTEGRANTE
 
@@ -124,3 +151,4 @@ test("jugador no puede desarrolar una tecnologia que ya tiene", nondet) :-
     puedeDesarrollar(ana,fundicion).
 
 :- end_tests(jugador_puede_desarrollar_una_tecnologia).
+
