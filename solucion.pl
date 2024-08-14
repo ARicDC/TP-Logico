@@ -60,24 +60,63 @@ alcanzo(Civilizacion,Tecnologia):-
 
 % punto 6
 % tiene(Jugador,UnaUnidad).
-tiene(ana,jinete(caballo,_)).
-tiene(ana,piquero(1,conEscudo,_)).
-tiene(ana,piquero(2,sinEscudo,_)).
+tiene(ana,jinete(caballo)).
+tiene(ana,piquero(1,conEscudo)).
+tiene(ana,piquero(2,sinEscudo)).
 tiene(beto,campeon(100)).
 tiene(beto,campeon(80)).
-tiene(beto,piquero(1,conEscudo,_)).
-tiene(beto,jinete(camello,_)).
-tiene(carola,piquero(3,sinEscudo,_)).
-tiene(carola,piquero(2,conEscudo,_)).
+tiene(beto,piquero(1,conEscudo)).
+tiene(beto,jinete(camello)).
+tiene(carola,piquero(3,sinEscudo)).
+tiene(carola,piquero(2,conEscudo)).
 % como Dimitri no tiene unidades no es necesario agregar a la base de conocimiento
 
 % punto 7
+cantidadVida(jinete(camello),80).
+cantidadVida(jinete(caballo),90).
+cantidadVida(campeon(Vida),Vida).
+cantidadVida(piquero(1,sinEscudo),50).
+cantidadVida(piquero(2,sinEscudo),65).
+cantidadVida(piquero(3,sinEscudo),70).
+cantidadVida(piquero(Nivel,conEscudo),Vida):-
+    cantidadVida(piquero(Nivel,sinEscudo),VidaSegunNivel),
+    Vida is VidaSegunNivel + VidaSegunNivel * 0.1. 
+
+conMasVida(Jugador,Unidad):-
+    tiene(Jugador,Unidad),
+    cantidadVida(Unidad,Vida),
+    forall((tiene(Jugador,OtraUnidad),cantidadVida(OtraUnidad,OtraVida),Unidad \= OtraUnidad),Vida > OtraVida).
 
 % punto 8
+ventaja(jinete(_),campeon(_)).
+ventaja(campeon(_),piquero(_,_)).
+ventaja(piquero(_,_),jinete(_)).
+ventaja(jinete(camello),jinete(caballo)).
 
+leGana(Unidad,OtraUnidad):-
+    ventaja(Unidad,OtraUnidad).
 
+leGana(Unidad,OtraUnidad):-
+    not(ventaja(OtraUnidad,Unidad)),
+    tieneMayorVida(Unidad,OtraUnidad).
+
+tieneMayorVida(Unidad,OtraUnidad):-
+    cantidadVida(Unidad,Vida),
+    cantidadVida(OtraUnidad,OtraVida),
+    Unidad \= OtraUnidad,
+    Vida > OtraVida.
 
 % punto 9
+puedeSobrevivir(Jugador):-
+    jugador(Jugador),
+    findall(Unidad,(tiene(Jugador,Unidad),piqueroConEscudo(Unidad)),PiquerosConEscudo),
+    findall(Unidad,(tiene(Jugador,Unidad),piqueroSinEscudo(Unidad)),PiquerosSinEscudo),
+    length(PiquerosConEscudo,CantidadDePiquerosConEscudo),
+    length(PiquerosSinEscudo,CantidadDePiquerosSinEscudo),
+    CantidadDePiquerosConEscudo > CantidadDePiquerosSinEscudo.
+    
+piqueroSinEscudo(piquero(_,sinEscudo)).
+piqueroConEscudo(piquero(_,conEscudo)).
 
 % punto 10
 % A
@@ -129,8 +168,10 @@ test("personas que no son expertos en metales") :-
     not(expertoEnMetales(carola)),not(expertoEnMetales(dimitri)).
 
 :- end_tests(experto_En_metales).
+
 %--------------------------------------------------------------------------------------------------------------
 %--------------------------------------------------------------------------------------------------------------
+
 :- begin_tests(civilizacion_popular).
 
 test("civilizacion es popular",nondet) :-
@@ -150,7 +191,7 @@ test("tecnologia con alcance global") :-
     tieneAlcanceGlobal(herreria).
 
 test("tecnologia no tiene alcance global", set(Tecnologia = [forja,emplumado,lamina,fundicion,punzon,horno,malla,placas,molino,collera,arado]), fail) :-
-    civilizacionPopular(Tecnologia).
+    tieneAlcanceGlobal(Tecnologia).
 
 :- end_tests(tiene_alcance_global).
 
@@ -172,13 +213,48 @@ test("es civilizacion lider",nondet) :-
     esLider(romanos).
 
 test("no es civilizacion lider", fail) :-
-    civilizacionPopular(incas).
+    esLider(incas).
 
 :- end_tests(civilizacion_lider).
 
 %--------------------------------------------------------------------------------------------------------------
 %--------------------------------------------------------------------------------------------------------------
 
+:- begin_tests(unidad_con_mas_vida).
+
+test("unidad con mas vida que tiene una persona",nondet) :-
+    conMasVida(ana,jinete(caballo)).
+
+:- end_tests(unidad_con_mas_vida).
+
+%--------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------
+
+:- begin_tests(unaUnidad_gana_a_otraUnidad).
+
+test("la primer unidad gana a la segunda unidad por comparacion de cantidad de vida") :-
+    leGana(campeon(95),campeon(50)).
+
+test("la primer unidad no gana a la segunda unidad por ventaja",fail) :-
+    leGana(campeon(100),jinete(caballo)).
+
+:- end_tests(unaUnidad_gana_a_otraUnidad).
+
+%--------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------
+
+:- begin_tests(puede_sobrevivr_a_un_asedio).
+
+test("jugador que puede sobrevivir a un asedio",nondet) :-
+    puedeSobrevivir(beto).
+
+test("jugador que no puede sobrevir a un asedio") :-
+    not(puedeSobrevivir(ana)),not(puedeSobrevivir(carola)),not(puedeSobrevivir(dimitri)).
+
+:- end_tests(puede_sobrevivr_a_un_asedio).
+
+%--------------------------------------------------------------------------------------------------------------
+%--------------------------------------------------------------------------------------------------------------
 
 :- begin_tests(jugador_puede_desarrollar_una_tecnologia).
 
